@@ -1,5 +1,5 @@
 # MSA-Conv CUDA Version
-pytorch implementation "TiC: Exploring Vision Transformer in Convolution".
+pytorch implementation "TiC: Exploring Vision Transformer in Convolution", Self-Attention Meets Conv!
 
 Installation Guide for MSA-Conv
 
