@@ -15,12 +15,14 @@ from core.op.msa_conv1_v1_1 import MSA_Conv2d_1_v1
 class MSA_Conv_2d(nn.Module):
     def __init__(self,
                  input_channel: int,
-                 # output_channel: int,
+                 output_channel: int,
                  kernel_size: int or tuple,
-                 # stride: int = 1,
+                 stride: int = 1,
                  dilation: int = 1,
                  dropout: float = 0.1,
-                 im2col_step: int = 7):
+                 im2col_step: int = 7,
+                 padding=1,
+                 bias=False):
         super().__init__()
         self.scale = input_channel ** -0.5
 
@@ -28,12 +30,12 @@ class MSA_Conv_2d(nn.Module):
         self.conv2 = MSA_Conv2d_1_v1(kernel_size, dilation=dilation, im2col_step=im2col_step)
         
         self.qkv_conv = nn.Conv2d(input_channel, input_channel*3, kernel_size=1, stride=1, padding=0)
-        # 这里的升维可以理解为一种embedding
+        # 这里的升维可以理解为一种embedding？
         self.attend = nn.Softmax(dim = 1)
         self.dropout = nn.Dropout(dropout)
-        # self.stride = stride
+        self.stride = stride
         
-        # self.mlp = nn.Conv2d(input_channel, output_channel, kernel_size=1, stride=stride, padding=0)
+        self.mlp = nn.Conv2d(input_channel, output_channel, kernel_size=kernel_size, stride=stride, padding=padding, bias=bias)
     
     def forward(self, x):
         """
@@ -51,8 +53,11 @@ class MSA_Conv_2d(nn.Module):
         # dot × v
         out = self.conv2(attn, v)
 
-        # mlp
-        #out = self.mlp(out)
+        out += x  # residual connection
 
+        # mlp
+        out = self.mlp(out)
+        nn.ReLU(inplace=True)(out)
+        
         return out
         
